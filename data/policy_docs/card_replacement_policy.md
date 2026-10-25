@@ -1,3 +1,12 @@
+---
+title: Card Replacement Policy
+country: US
+doc_type: customer_facing
+allowed_roles: [support_agent, executive, compliance_officer]
+effective_date: 2026-01-01
+version: "1.0"
+---
+
 # Card Replacement Policy
 
 *JBank — fictional institution, synthetic data only.*

@@ -23,9 +23,10 @@ Thumbs.db
 # Eval outputs (keep results summaries, not raw run dumps, if large)
 eval/runs/
 
-# Generated/exported fake data (regeneratable via data/seed/*.py — never commit the output)
+# Generated/exported fake data (regeneratable via data/seed/*.py — never commit the output).
+# NOTE: data/seed/schema.sql is source code and MUST stay tracked, so don't ignore *.sql broadly.
 data/seed/*.csv
-data/seed/*.sql
+data/seed/*_dump.sql
 data/seed/exports/
 
 # Model weights / large binaries — these must NEVER be committed.

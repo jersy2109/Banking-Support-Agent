@@ -1,3 +1,12 @@
+---
+title: Account Types & Fees
+country: US
+doc_type: customer_facing
+allowed_roles: [support_agent, executive, compliance_officer]
+effective_date: 2026-01-01
+version: "1.0"
+---
+
 # Account Types & Fees
 
 *JBank — fictional institution, synthetic data only.*

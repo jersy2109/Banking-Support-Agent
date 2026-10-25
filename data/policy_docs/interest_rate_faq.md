@@ -1,3 +1,12 @@
+---
+title: Interest Rate FAQ
+country: US
+doc_type: customer_facing
+allowed_roles: [support_agent, executive, compliance_officer]
+effective_date: 2026-01-01
+version: "1.0"
+---
+
 # Interest Rate FAQ
 
 *JBank — fictional institution, synthetic data only. Rates below are illustrative and not based on any real institution's current rates.*

@@ -1,3 +1,12 @@
+---
+title: Overdraft Policy
+country: US
+doc_type: customer_facing
+allowed_roles: [support_agent, executive, compliance_officer]
+effective_date: 2026-01-01
+version: "1.0"
+---
+
 # Overdraft Policy
 
 *JBank — fictional institution, synthetic data only.*
