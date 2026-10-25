@@ -1,0 +1,35 @@
+# Environment
+.env
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Docker volumes should never be local folders, but just in case
+*.sqlite3
+*.db
+
+# Logs
+*.log
+
+# Eval outputs (keep results summaries, not raw run dumps, if large)
+eval/runs/
+
+# Generated/exported fake data (regeneratable via data/seed/*.py — never commit the output)
+data/seed/*.csv
+data/seed/*.sql
+data/seed/exports/
+
+# Model weights / large binaries — these must NEVER be committed.
+# Models are pulled by the ollama-init service at container startup instead.
+*.gguf
+*.bin
+*.safetensors

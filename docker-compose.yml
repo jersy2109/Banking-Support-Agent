@@ -1,0 +1,131 @@
+services:
+
+  # ---------------------------------------------------------------
+  # PostgreSQL — relational data (accounts, customers, transactions, cards)
+  # ---------------------------------------------------------------
+  postgres:
+    image: postgres:16
+    container_name: banking_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: banking_user
+      POSTGRES_PASSWORD: banking_pass
+      POSTGRES_DB: banking_db
+    ports:
+      - "5433:5432"   # host 5433 -> container 5432 (avoids clashing with a native Postgres on 5432)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Scripts in this folder run once, only when the database volume is first created
+      - ./data/seed/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U banking_user -d banking_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------
+  # Qdrant — vector database for RAG (policy document chunks)
+  # ---------------------------------------------------------------
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: banking_qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"   # REST API
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/6333' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------
+  # Ollama — local LLM (Mistral) + embedding model (nomic-embed-text)
+  # Models are pulled into a named volume on first run, never committed to Git.
+  # ---------------------------------------------------------------
+  ollama:
+    image: ollama/ollama:latest
+    container_name: banking_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/11434' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot init container: waits for Ollama, then pulls the models.
+  # Runs every startup but is near-instant after the first pull
+  # (Ollama skips re-downloading models it already has in the volume).
+  ollama-init:
+    image: curlimages/curl:latest
+    container_name: banking_ollama_init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+        echo 'Pulling mistral (this may take a while on first run)...' &&
+        curl -s http://ollama:11434/api/pull -d '{\"name\": \"mistral\"}' -o /dev/null &&
+        echo 'mistral ready.' &&
+        echo 'Pulling nomic-embed-text...' &&
+        curl -s http://ollama:11434/api/pull -d '{\"name\": \"nomic-embed-text\"}' -o /dev/null &&
+        echo 'nomic-embed-text ready.' &&
+        echo 'All models ready.'
+      "
+
+  # ---------------------------------------------------------------
+  # Neo4j — graph database for fraud-pattern detection (stretch goal)
+  # Commented out until Phase 6. Uncomment to enable.
+  # ---------------------------------------------------------------
+  # neo4j:
+  #   image: neo4j:5
+  #   container_name: banking_neo4j
+  #   restart: unless-stopped
+  #   ports:
+  #     - "7474:7474"   # browser UI
+  #     - "7687:7687"   # bolt protocol
+  #   environment:
+  #     - NEO4J_AUTH=neo4j/banking_pass
+  #   volumes:
+  #     - neo4j_data:/data
+
+  # ---------------------------------------------------------------
+  # FastAPI — mock bank API (added in Phase 3)
+  # ---------------------------------------------------------------
+  # api:
+  #   build: ./api
+  #   container_name: banking_api
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   env_file:
+  #     - .env
+
+  # ---------------------------------------------------------------
+  # Streamlit — chat UI (added in Phase 4)
+  # ---------------------------------------------------------------
+  # ui:
+  #   build: ./ui
+  #   container_name: banking_ui
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8501:8501"
+  #   depends_on:
+  #     - api
+  #   env_file:
+  #     - .env
+
+volumes:
+  postgres_data:
+  qdrant_data:
+  ollama_data:
+  # neo4j_data:

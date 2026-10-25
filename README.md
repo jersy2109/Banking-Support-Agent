@@ -2,7 +2,7 @@
 
 A fictional-bank customer support agent that answers policy questions, pulls live account data, and knows when to escalate to a human — built to mirror how production AI customer-support systems are actually architected.
 
-> ⚠️ **This project uses 100% synthetic data.** No real bank, customer, or account information is used anywhere. "Vedranta Bank" and all accounts/transactions are fictional, generated for demonstration purposes only.
+> ⚠️ **This project uses 100% synthetic data.** No real bank, customer, or account information is used anywhere. "JBank" and all accounts/transactions are fictional, generated for demonstration purposes only.
 
 ---
 
@@ -64,7 +64,7 @@ All services run locally via Docker Compose — no paid APIs required.
 
 | Layer | Tool | Why |
 |---|---|---|
-| LLM | Mistral (local, via Ollama) | Free, runs entirely offline |
+| LLM | Mistral (via Ollama, containerized) | Free, runs entirely offline, no external API dependency |
 | Agent orchestration | LangGraph | Explicit state machine for routing, tool calls, and multi-turn identity verification |
 | Vector database | Qdrant | Self-hosted, container-based retrieval for policy documents |
 | Relational data | PostgreSQL | Accounts, customers, transactions, cards (seeded with synthetic data via Faker) |
@@ -72,7 +72,7 @@ All services run locally via Docker Compose — no paid APIs required.
 | Graph database (stretch) | Neo4j | Fraud-pattern detection across linked accounts/devices |
 | UI | Streamlit | Minimal chat interface |
 | Eval | Custom harness (+ optional Ragas) | Scores routing accuracy, tool-call correctness, and retrieval relevance |
-| Infra | Docker Compose, GitHub Actions | Reproducible local environment + CI on push |
+| Infra | Docker Compose (incl. Ollama container), GitHub Actions | Fully self-contained: `docker compose up` runs everything, including the LLM — no local installs required, nothing committed to Git except code/config |
 
 ---
 
@@ -94,29 +94,47 @@ A 25–30 question test set covers all four routing categories, each with an exp
 
 ## Project status
 
-- [ ] Policy documents + Postgres schema
+- [x] Policy documents, Postgres schema, and synthetic seed data
 - [ ] Qdrant RAG pipeline
 - [ ] Mock bank API (FastAPI)
 - [ ] LangGraph agent + routing logic
 - [ ] Streamlit chat UI
 - [ ] Eval harness
 - [ ] Neo4j fraud-graph (stretch)
-- [ ] CI/CD + Azure deployment
+- [ ] CI/CD (GitHub Actions)
+- [ ] Recorded demo (GIF/video) embedded here
 
 ---
 
 ## Running it locally
 
+This project is fully self-contained and runs entirely on your own machine — no cloud account, no API keys, no cost.
+
 ```bash
 git clone <repo-url>
 cd banking-support-agent
-docker-compose up -d
-# instructions for seeding data, running the agent, and launching the UI
-# will be added as each phase is completed
+docker compose up -d
 ```
+
+The first run takes a few minutes: the Ollama container pulls the Mistral and `nomic-embed-text` models into a local Docker volume. Later runs start instantly. On a fresh clone, Postgres creates its tables automatically from `data/seed/schema.sql`.
+
+Then load the synthetic data (30 customers, ~47 accounts, ~700 transactions):
+
+```bash
+pip install -r requirements.txt
+python data/seed/seed.py
+```
+
+**Ports and credentials**
+- Postgres is published on host port **5433** (not 5432) so it doesn't clash with a Postgres installed on your machine. From your host, connect to `127.0.0.1:5433`; from inside Docker, services use host `postgres`, port `5432`.
+- The credentials in `docker-compose.yml` (e.g. `banking_user` / `banking_pass`) are local development defaults for synthetic data only, not real secrets.
+
+Instructions for running the agent and launching the UI will be added as each phase is completed.
+
+No live deployment is provided — this is intentional. A locally running Mistral model isn't something a free-tier cloud host can run, and a `docker compose up` that just works is a more honest demonstration of the system than a hosted demo would be. See the **Demo** section below (added once the agent is working) for a recorded walkthrough instead.
 
 ---
 
 ## Disclaimer
 
-This is a portfolio/learning project. "Vedranta Bank," its policies, account data, and transactions are entirely fictional and generated for demonstration purposes. Nothing in this repository represents real financial advice, real banking data, or production-grade compliance guidance.
+This is a portfolio/learning project. "JBank," its policies, account data, and transactions are entirely fictional and generated for demonstration purposes. Nothing in this repository represents real financial advice, real banking data, or production-grade compliance guidance.
