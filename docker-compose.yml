@@ -50,7 +50,7 @@ services:
     container_name: banking_ollama
     restart: unless-stopped
     ports:
-      - "11434:11434"
+      - "11435:11434"   # host 11435 -> container 11434 (avoids clashing with a native Ollama on 11434)
     volumes:
       - ollama_data:/root/.ollama
     healthcheck:

@@ -95,11 +95,12 @@ A 25–30 question test set covers all four routing categories, each with an exp
 ## Project status
 
 - [x] Policy documents, Postgres schema, and synthetic seed data
-- [ ] Qdrant RAG pipeline
+- [x] Qdrant RAG pipeline (section-level chunking, metadata filters, retrieval check)
 - [ ] Mock bank API (FastAPI)
 - [ ] LangGraph agent + routing logic
 - [ ] Streamlit chat UI
 - [ ] Eval harness
+- [ ] Jurisdiction-aware, role-based retrieval across US/MX/ES documents (stretch)
 - [ ] Neo4j fraud-graph (stretch)
 - [ ] CI/CD (GitHub Actions)
 - [ ] Recorded demo (GIF/video) embedded here
@@ -118,15 +119,25 @@ docker compose up -d
 
 The first run takes a few minutes: the Ollama container pulls the Mistral and `nomic-embed-text` models into a local Docker volume. Later runs start instantly. On a fresh clone, Postgres creates its tables automatically from `data/seed/schema.sql`.
 
-Then load the synthetic data (30 customers, ~47 accounts, ~700 transactions):
+Then load the synthetic data (30 customers across US/MX/ES, ~50 accounts, ~800 transactions):
 
 ```bash
 pip install -r requirements.txt
 python data/seed/seed.py
 ```
 
+Then index the policy documents into the vector database and check retrieval:
+
+```bash
+python -m agent.rag.ingest
+python -m agent.rag.test_retrieval
+```
+
+The test prints, for sample questions, which policy sections were retrieved and their similarity scores, and verifies that role and country filters exclude documents they should.
+
 **Ports and credentials**
 - Postgres is published on host port **5433** (not 5432) so it doesn't clash with a Postgres installed on your machine. From your host, connect to `127.0.0.1:5433`; from inside Docker, services use host `postgres`, port `5432`.
+- Ollama is published on host port **11435** (not 11434) for the same reason, and Qdrant's dashboard is at `http://localhost:6333/dashboard`.
 - The credentials in `docker-compose.yml` (e.g. `banking_user` / `banking_pass`) are local development defaults for synthetic data only, not real secrets.
 
 Instructions for running the agent and launching the UI will be added as each phase is completed.
