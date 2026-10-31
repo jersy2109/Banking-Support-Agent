@@ -1,6 +1,10 @@
-# Seed script + RAG pipeline dependencies (more will be added as we build the API, agent, and eval harness)
+# Everything needed to run the project on your machine.
+-r api/requirements.txt   # FastAPI, uvicorn, PostgreSQL driver (also used by the seed script)
 faker==30.8.2
-psycopg2-binary==2.9.10
 qdrant-client==1.20.0
 ollama==0.6.3
 PyYAML==6.0.3
+
+# Tests
+pytest==9.1.1
+httpx==0.28.1

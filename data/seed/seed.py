@@ -42,6 +42,15 @@ COUNTRIES = {
 }
 FAKERS = {code: Faker(cfg[0]) for code, cfg in COUNTRIES.items()}
 
+DISPUTE_REASONS = [
+    "I did not make this purchase",
+    "I was charged twice for the same item",
+    "The item I ordered never arrived",
+    "The amount charged is different from what I agreed to",
+    "I cancelled this subscription but was still charged",
+]
+DISPUTE_STATUSES = ["open", "under_review", "resolved_customer", "resolved_merchant", "escalated"]
+
 ACCOUNT_TYPES = ["essential_checking", "premier_checking", "standard_savings", "high_yield_savings"]
 TXN_CATEGORIES = ["groceries", "dining", "transfer", "atm_withdrawal", "deposit", "subscription", "utilities", "online_shopping"]
 MERCHANTS_BY_CATEGORY = {
@@ -187,6 +196,27 @@ def seed_transactions(cur, account_ids, per_account=15):
             )
 
 
+def seed_disputes(cur, n=8):
+    """Open a few disputes on older card purchases, so there is dispute data to look up."""
+    cur.execute(
+        """
+        SELECT t.transaction_id, a.customer_id
+        FROM transactions t JOIN accounts a ON a.account_id = t.account_id
+        WHERE t.amount_cents < 0 AND t.status = 'posted' AND t.occurred_at < now() - interval '5 days'
+        ORDER BY t.transaction_id
+        """
+    )
+    candidates = cur.fetchall()  # ordered, so the seeded random.sample below is reproducible
+    chosen = random.sample(candidates, k=min(n, len(candidates)))
+    for txn_id, cust_id in chosen:
+        cur.execute(
+            "INSERT INTO disputes (transaction_id, customer_id, reason, status) VALUES (%s, %s, %s, %s)",
+            (txn_id, cust_id, random.choice(DISPUTE_REASONS), random.choice(DISPUTE_STATUSES)),
+        )
+        cur.execute("UPDATE transactions SET status = 'disputed' WHERE transaction_id = %s", (txn_id,))
+    return len(chosen)
+
+
 def main():
     conn = get_connection()
     conn.autocommit = False
@@ -204,9 +234,12 @@ def main():
             print(f"Seeding transactions for {len(account_ids)} accounts...")
             seed_transactions(cur, account_ids)
 
+            print("Seeding disputes...")
+            dispute_count = seed_disputes(cur)
+
         conn.commit()
         by_country = dict(Counter(country for _, country in customers))
-        print(f"Done. {len(customers)} customers, {len(account_ids)} accounts seeded. Customers by country: {by_country}")
+        print(f"Done. {len(customers)} customers, {len(account_ids)} accounts, {dispute_count} disputes seeded. Customers by country: {by_country}")
     except Exception:
         conn.rollback()
         raise

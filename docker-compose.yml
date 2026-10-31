@@ -96,19 +96,21 @@ services:
   #     - neo4j_data:/data
 
   # ---------------------------------------------------------------
-  # FastAPI — mock bank API (added in Phase 3)
+  # FastAPI — mock bank API (http://localhost:8000, docs at /docs)
+  # Inside Docker it reaches Postgres at host "postgres", port 5432.
   # ---------------------------------------------------------------
-  # api:
-  #   build: ./api
-  #   container_name: banking_api
-  #   restart: unless-stopped
-  #   ports:
-  #     - "8000:8000"
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   env_file:
-  #     - .env
+  api:
+    build: ./api
+    container_name: banking_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   # ---------------------------------------------------------------
   # Streamlit — chat UI (added in Phase 4)

@@ -96,7 +96,7 @@ A 25–30 question test set covers all four routing categories, each with an exp
 
 - [x] Policy documents, Postgres schema, and synthetic seed data
 - [x] Qdrant RAG pipeline (section-level chunking, metadata filters, retrieval check)
-- [ ] Mock bank API (FastAPI)
+- [x] Mock bank API (FastAPI): API-key auth, rate limiting, identity verification with lockout, audit log
 - [ ] LangGraph agent + routing logic
 - [ ] Streamlit chat UI
 - [ ] Eval harness
@@ -135,9 +135,22 @@ python -m agent.rag.test_retrieval
 
 The test prints, for sample questions, which policy sections were retrieved and their similarity scores, and verifies that role and country filters exclude documents they should.
 
+The mock bank API starts with the rest of the stack at `http://localhost:8000`; open `http://localhost:8000/docs` for interactive documentation. To run it from your machine instead (with auto-reload), stop the container first and start it yourself:
+
+```bash
+docker compose stop api
+uvicorn api.main:app --reload --port 8000
+```
+
+Run the API tests (they use the seeded database):
+
+```bash
+python -m pytest api/tests -q
+```
+
 **Ports and credentials**
 - Postgres is published on host port **5433** (not 5432) so it doesn't clash with a Postgres installed on your machine. From your host, connect to `127.0.0.1:5433`; from inside Docker, services use host `postgres`, port `5432`.
-- Ollama is published on host port **11435** (not 11434) for the same reason, and Qdrant's dashboard is at `http://localhost:6333/dashboard`.
+- The API is on host port **8000**. Ollama is published on host port **11435** (not 11434) for the same reason, and Qdrant's dashboard is at `http://localhost:6333/dashboard`.
 - The credentials in `docker-compose.yml` (e.g. `banking_user` / `banking_pass`) are local development defaults for synthetic data only, not real secrets.
 
 Instructions for running the agent and launching the UI will be added as each phase is completed.
